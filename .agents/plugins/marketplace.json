@@ -1,0 +1,20 @@
+{
+  "name": "mobile-dev-private",
+  "interface": {
+    "displayName": "Mobile Dev private"
+  },
+  "plugins": [
+    {
+      "name": "mobile-dev",
+      "source": {
+        "source": "local",
+        "path": "./plugins/mobile-dev"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
