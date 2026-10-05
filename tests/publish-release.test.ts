@@ -58,22 +58,22 @@ test("publishing creates an independent branch with built files, runtime depende
   const sourceHead = git(remote, ["rev-parse", "main"]);
   const result = await publishRelease(plugin, "v1.2.3", remote);
   assert.equal(result.published, true);
-  const catalogText = git(remote, ["show", "release/latest:.agents/plugins/marketplace.json"]);
+  const catalogText = git(remote, ["show", "codex/privacy-release:.agents/plugins/marketplace.json"]);
   const catalog = JSON.parse(catalogText);
-  assert.equal(catalog.name, "mobile-dev");
+  assert.equal(catalog.name, "mobile-dev-private");
   assert.deepEqual(catalog.plugins[0].source, { source: "local", path: "./plugins/mobile-dev" });
-  const filesText = git(remote, ["ls-tree", "-r", "--name-only", "release/latest"]);
+  const filesText = git(remote, ["ls-tree", "-r", "--name-only", "codex/privacy-release"]);
   assert.match(filesText, /plugins\/mobile-dev\/dist\/runtime\/node_modules\/dependency\/index.js/);
   assert.doesNotMatch(filesText, /source-only|\.gitignore/);
-  const executable = git(remote, ["ls-tree", "release/latest", "plugins/mobile-dev/dist/server.mjs"]);
+  const executable = git(remote, ["ls-tree", "codex/privacy-release", "plugins/mobile-dev/dist/server.mjs"]);
   assert.match(executable, /^100755/);
-  const launcher = git(remote, ["ls-tree", "release/latest", "plugins/mobile-dev/scripts/launch-mcp.sh"]);
+  const launcher = git(remote, ["ls-tree", "codex/privacy-release", "plugins/mobile-dev/scripts/launch-mcp.sh"]);
   assert.match(launcher, /^100755/);
-  const commits = git(remote, ["rev-list", "--count", "release/latest"]);
+  const commits = git(remote, ["rev-list", "--count", "codex/privacy-release"]);
   assert.equal(commits.trim(), "1");
   const currentSourceHead = git(remote, ["rev-parse", "main"]);
   assert.equal(currentSourceHead, sourceHead);
-  const subject = git(remote, ["log", "-1", "--format=%s", "release/latest"]);
+  const subject = git(remote, ["log", "-1", "--format=%s", "codex/privacy-release"]);
   assert.equal(subject.trim(), "chore(release): release mobile-dev 1.2.3");
 });
 
@@ -81,15 +81,15 @@ test("publishing a newer release advances the branch and removes obsolete files"
   const { remote, plugin, version } = await fixture(t);
   await writeFile(`${plugin}/obsolete.txt`, "old payload");
   await publishRelease(plugin, "v1.2.3", remote);
-  const previousHead = git(remote, ["rev-parse", "release/latest"]);
+  const previousHead = git(remote, ["rev-parse", "codex/privacy-release"]);
   await rm(`${plugin}/obsolete.txt`);
   await version("1.2.4");
   await publishRelease(plugin, "v1.2.4", remote);
-  const parent = git(remote, ["rev-parse", "release/latest^"]);
+  const parent = git(remote, ["rev-parse", "codex/privacy-release^"]);
   assert.equal(parent, previousHead);
-  const payload = git(remote, ["show", "release/latest:plugins/mobile-dev/payload.txt"]);
+  const payload = git(remote, ["show", "codex/privacy-release:plugins/mobile-dev/payload.txt"]);
   assert.equal(payload, "1.2.4");
-  const files = git(remote, ["ls-tree", "-r", "--name-only", "release/latest"]);
+  const files = git(remote, ["ls-tree", "-r", "--name-only", "codex/privacy-release"]);
   assert.doesNotMatch(files, /obsolete.txt/);
 });
 
@@ -102,18 +102,18 @@ test("publishing advances an existing portable release without retaining its man
   git(legacy, ["config", "user.name", "Release test"]);
   git(legacy, ["config", "user.email", "release@example.test"]);
   git(legacy, ["config", "commit.gpgsign", "false"]);
-  await writeFile(`${legacy}/.agents/plugins/marketplace.json`, '{"name":"mobile-dev"}');
+  await writeFile(`${legacy}/.agents/plugins/marketplace.json`, '{"name":"mobile-dev-private"}');
   await writeFile(`${legacy}/plugins/mobile-dev/plugin.json`, '{"name":"mobile-dev","version":"1.2.2"}');
   await writeFile(`${legacy}/plugins/mobile-dev/mcp.json`, '{}');
   git(legacy, ["add", "."]);
   git(legacy, ["commit", "-m", "Release Mobile Dev 1.2.2"]);
-  git(legacy, ["push", remote, "HEAD:refs/heads/release/latest"]);
-  const previousHead = git(remote, ["rev-parse", "release/latest"]);
+  git(legacy, ["push", remote, "HEAD:refs/heads/codex/privacy-release"]);
+  const previousHead = git(remote, ["rev-parse", "codex/privacy-release"]);
   const result = await publishRelease(plugin, "v1.2.3", remote);
   assert.equal(result.published, true);
-  const parent = git(remote, ["rev-parse", "release/latest^"]);
+  const parent = git(remote, ["rev-parse", "codex/privacy-release^"]);
   assert.equal(parent, previousHead);
-  const files = git(remote, ["ls-tree", "-r", "--name-only", "release/latest"]);
+  const files = git(remote, ["ls-tree", "-r", "--name-only", "codex/privacy-release"]);
   assert.match(files, /plugins\/mobile-dev\/\.codex-plugin\/plugin.json/);
   assert.doesNotMatch(files, /plugins\/mobile-dev\/(?:plugin|mcp)\.json/);
 });
@@ -121,7 +121,7 @@ test("publishing advances an existing portable release without retaining its man
 test("older and repeated releases never replace the latest payload", async t => {
   const { remote, plugin, version } = await fixture(t);
   await publishRelease(plugin, "v1.2.3", remote);
-  const head = git(remote, ["rev-parse", "release/latest"]);
+  const head = git(remote, ["rev-parse", "codex/privacy-release"]);
   await writeFile(`${plugin}/payload.txt`, "rebuilt payload");
   const repeated = await publishRelease(plugin, "v1.2.3", remote);
   assert.equal(repeated.published, false);
@@ -129,7 +129,7 @@ test("older and repeated releases never replace the latest payload", async t => 
   const older = await publishRelease(plugin, "v1.2.2", remote);
   assert.equal(older.published, false);
   assert.equal(older.latest, "1.2.3");
-  const current = git(remote, ["rev-parse", "release/latest"]);
+  const current = git(remote, ["rev-parse", "codex/privacy-release"]);
   assert.equal(current, head);
 });
 
@@ -186,7 +186,7 @@ test("Codex installs and refreshes the tracked branch in an isolated profile", {
     return JSON.parse(output);
   }
   await publishRelease(plugin, "v1.2.3", remote);
-  codex(["plugin", "marketplace", "add", "https://example.test/mobile-dev.git", "--ref", "release/latest", "--json"]);
+  codex(["plugin", "marketplace", "add", "https://example.test/mobile-dev.git", "--ref", "codex/privacy-release", "--json"]);
   const installed = codex(["plugin", "add", "mobile-dev@mobile-dev", "--json"]);
   assert.equal(installed.version, "1.2.3");
   const server = codex(["mcp", "get", "mobile-dev", "--json"]);

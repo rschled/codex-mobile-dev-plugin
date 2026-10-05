@@ -4,5 +4,8 @@
   "version": "0.20.9",
   "dependencies": {
     "agent-device": "0.20.9"
+  },
+  "overrides": {
+    "undici": "7.30.0"
   }
 }

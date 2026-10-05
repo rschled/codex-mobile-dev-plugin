@@ -1,4 +1,4 @@
-# Mobile Dev for Codex
+# Mobile Dev for Codex — privacy fork
 
 Keep iOS and Android devices beside your Codex desktop chat while building,
 running, and debugging mobile apps. Mobile Dev works with Expo, React Native,
@@ -9,24 +9,28 @@ SwiftUI, and other native mobile projects.
 Install the prebuilt plugin from the release marketplace:
 
 ```sh
-codex plugin marketplace add https://github.com/callstackincubator/codex-mobile-dev-plugin.git --ref release/latest
-codex plugin add mobile-dev@mobile-dev
+codex plugin marketplace add https://github.com/rschled/codex-mobile-dev-plugin.git --ref codex/privacy-release
+codex plugin add mobile-dev@mobile-dev-private
 ```
 
 Open a new chat after installing. The package includes the built plugin and
-bundled runtimes; no plugin build or `npm install` is needed. While the repository
-is private, installation requires GitHub read access and working Git authentication.
+bundled runtimes; no plugin build or `npm install` is needed.
 
-Mobile Dev shows a banner when a newer release is ready to install. Click
-**Update**, then fully quit and reopen Codex after it finishes.
+This fork disables Sentry reporting, anonymous installation IDs, and automatic
+GitHub update checks. Reporting cannot be enabled through environment variables
+or UI metadata. Native helpers run with telemetry disabled; their report relay
+also discards reports. The embedded UI has no permitted external connection domains.
 
-You can also update an existing installation from the terminal:
+Updates require an explicit manual marketplace upgrade:
 
 ```sh
-codex plugin marketplace upgrade mobile-dev
+codex plugin marketplace upgrade mobile-dev-private
 ```
 
-Fully quit and reopen Codex after updating.
+Fully quit and reopen Codex after updating. Manual installation/update and source
+builds still download from GitHub/npm. Device access, local Metro connections,
+and anything you explicitly attach to Codex chat remain available. This is not
+a network sandbox for your app, the AI host, or a manually launched native binary.
 
 ## Features
 
@@ -106,10 +110,5 @@ Implementation and release details live in the linked contributor documentation.
 
 ## Privacy
 
-Mobile Dev reports plugin errors, crashes, and aggregate performance measurements
-to Sentry. App logs, screenshots, input content, tool payloads, and device
-performance recordings are excluded. Errors and crashes use a generated anonymous
-installation ID. Set `MOBILE_DEV_TELEMETRY=off` in the MCP launch environment to
-disable reporting. See
-[Sentry observability](https://github.com/callstackincubator/codex-mobile-dev-plugin/blob/main/docs/telemetry.md)
-for collection, privacy, and configuration details.
+See [the fork privacy policy](docs/privacy-fork.md). Upstream reporting is permanently
+disabled on the plugin launch path, including prebuilt native helpers.

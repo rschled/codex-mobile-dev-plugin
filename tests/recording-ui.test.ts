@@ -80,43 +80,7 @@ for (const reducedMotion of [false, true]) {
     t.after(async () => {
       await mounted.close();
       dom.window.close();
-      const captured = telemetry.join("\n");
-      const hasDensityTiming = captured.includes("ui.recording.change_density.mean");
-      const hasDeriveTiming = captured.includes("ui.recording.derive.mean");
-      const hasRecordingSurface = captured.includes('"surface":{"value":"recording"');
-      const hasRecordingView = captured.includes('"view":{"value":"recording"');
-      const hasFpsGauge = captured.includes("ui.recording.fps_samples");
-      const hasMeasuredFps = captured.includes("averageFps");
-      const hasMeasuredJank = captured.includes("jankRatePercent");
-      const hasMeasuredPacing = captured.includes("p95FrameIntervalMs");
-      const hasRecordingId = captured.includes(recording.id);
-      const hasBundleId = captured.includes("com.example.shop");
-      const hasRevealTiming = captured.includes("ui.recording.reveal.mean");
-      assert.equal(hasRevealTiming, reducedMotion === false, "Only completed reveals produce timing measurements.");
-      if (reducedMotion === false) {
-        for (const body of telemetry) {
-          const lines = body.split("\n");
-          for (const line of lines) {
-            if (line.includes("ui.recording.reveal.mean") === false) continue;
-            const payload: { items: Array<{ name: string; value: number }> } = JSON.parse(line);
-            const reveal = payload.items.find(item => item.name === "ui.recording.reveal.mean");
-            assert.ok(reveal);
-            assert.ok(reveal.value >= 700 && reveal.value < 1400, "Reveal timing measures the drawing duration and excludes the intentional pause.");
-          }
-        }
-      }
-      assert.ok(hasFpsGauge, "Recording telemetry counts FPS samples on the active surface.");
-      assert.equal(hasMeasuredFps, false, "Device FPS values stay local.");
-      assert.equal(hasMeasuredJank, false, "Device jank statistics stay local.");
-      assert.equal(hasMeasuredPacing, false, "Device pacing statistics stay local.");
-      assert.ok(hasDensityTiming, "The actual chart path records highlight processing duration.");
-      assert.ok(hasDeriveTiming, "The active chart path records whole-run and range-statistics derivation.");
-      assert.ok(captured.includes("ui.recording.context_attach.mean"), "The actual Ask/Open path measures attachment acknowledgement without recording its contents.");
-      assert.ok(captured.includes("ui.recording.message_ack.mean"), "Message acknowledgement remains measured after the attachment finishes.");
-      assert.ok(hasRecordingSurface);
-      assert.ok(hasRecordingView);
-      assert.equal(hasRecordingId, false, "Highlight telemetry excludes recording data.");
-      assert.equal(hasBundleId, false);
+      assert.deepEqual(telemetry, [], "Recording interactions must not report externally.");
     });
     const settle = async () => { await new Promise(resolve => window.setTimeout(resolve, 30)); };
     await settle();

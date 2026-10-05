@@ -1,7 +1,7 @@
 export function pluginMarketplace(pluginName, publicRelease = false) {
   return {
-    name: publicRelease ? "mobile-dev" : "mobile-dev-local",
-    interface: { displayName: publicRelease ? "Mobile Dev" : "Mobile Dev local" },
+    name: "mobile-dev-private",
+    interface: { displayName: "Mobile Dev private" },
     plugins: [{
       name: pluginName,
       source: { source: "local", path: `./plugins/${pluginName}` },

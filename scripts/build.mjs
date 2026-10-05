@@ -6,8 +6,6 @@ import { baguetteTelemetrySourceHash } from "./rebuild-baguette.mjs";
 import { telemetryBuildEnvironment } from "./telemetry-build.mjs";
 import { buildServeEmu } from "./build-serve-emu.mjs";
 import { build } from "esbuild";
-import { sentryEsbuildPlugin } from "@sentry/node/esbuild";
-import SentryCli from "@sentry/cli";
 import { compile } from "@tailwindcss/node";
 import { Scanner } from "@tailwindcss/oxide";
 import { access, copyFile, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -119,14 +117,12 @@ const app = await build({
     });
   } }],
   bundle: true, write: false, format: "iife", platform: "browser",
-  outfile: ".sentry/ui/app.js", sourcemap: "external",
+  outfile: ".local-dev/build-ui/app.js", sourcemap: "external",
   target: "chrome120", minify: true, legalComments: "eof", metafile: true,
 });
-await mkdir(".sentry/ui", { recursive: true });
+await mkdir(".local-dev/build-ui", { recursive: true });
 for (const file of app.outputFiles) await writeFile(file.path, file.contents);
-const cli = new SentryCli();
-await cli.execute(["sourcemaps", "inject", ".sentry/ui"]);
-const js = await readFile(".sentry/ui/app.js", "utf8");
+const js = await readFile(".local-dev/build-ui/app.js", "utf8");
 const css = app.outputFiles.find(file => file.path.endsWith(".css"))?.text ?? "";
 const template = await readFile("src/ui/index.html", "utf8");
 const configuredTemplate = template.replace('name="mobile-dev-environment" content="development"', `name="mobile-dev-environment" content="${telemetryEnvironment}"`);
@@ -137,18 +133,10 @@ const server = await build({
   entryPoints: { server: "src/server/index.ts", "agent-device-server": "src/server/agent-device-server.mjs" }, outdir: "dist", outExtension: { ".js": ".mjs" }, bundle: true,
   format: "esm", platform: "node", target: "node22", minify: false, legalComments: "eof", metafile: true,
   sourcemap: "external",
-  plugins: [sentryEsbuildPlugin({ project: "codex-mobile-dev-server", telemetry: false, sourcemaps: { disable: true }, release: { inject: false, create: false, finalize: false } })],
   banner: { js: "import { createRequire as mobileDevBundleRequire } from 'node:module'; const require = mobileDevBundleRequire(import.meta.url);" },
 });
-await mkdir(".sentry/server", { recursive: true });
 for (const name of ["server.mjs", "agent-device-server.mjs"]) {
-  await copyFile(`dist/${name}`, `.sentry/server/${name}`);
-  await copyFile(`dist/${name}.map`, `.sentry/server/${name}.map`);
   await rm(`dist/${name}.map`);
-}
-await cli.execute(["sourcemaps", "inject", ".sentry/server"]);
-for (const name of ["server.mjs", "agent-device-server.mjs"]) {
-  await copyFile(`.sentry/server/${name}`, `dist/${name}`);
   execFileSync(process.execPath, ["--check", `dist/${name}`]);
 }
 // Tailwind compiles these styles before esbuild records its input files.
@@ -174,4 +162,4 @@ for (const directory of [...packageRoots].sort()) {
 await writeFile("dist/third-party-licenses.txt", licenses.join("\n\n====================\n\n"));
 const telemetryConfig = JSON.stringify({ environment: telemetryEnvironment }, null, 2);
 await writeFile("dist/telemetry-environment.json", telemetryConfig + "\n");
-console.log(`Built the panel and runtimes with Sentry environment ${telemetryEnvironment}.`);
+console.log(`Built the privacy panel and runtimes with build environment ${telemetryEnvironment}.`);

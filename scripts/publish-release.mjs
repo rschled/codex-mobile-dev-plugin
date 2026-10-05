@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { pluginMarketplace } from "./plugin-marketplace.mjs";
 import { assertBuildEnvironment } from "./telemetry-build.mjs";
 
-const branch = "refs/heads/release/latest";
+const branch = "refs/heads/codex/privacy-release";
 
 function compareVersions(incoming, previous) {
   const incomingParts = incoming.split("-");
@@ -99,7 +99,7 @@ export async function publishRelease(pluginDirectory, tag, remote, token) {
       git(["checkout", "--detach", "FETCH_HEAD"]);
       const previousCatalogText = await readFile(`${directory}/.agents/plugins/marketplace.json`, "utf8");
       const previousCatalog = JSON.parse(previousCatalogText);
-      if (previousCatalog.name !== "mobile-dev") throw new Error("release/latest must contain the mobile-dev marketplace.");
+      if (previousCatalog.name !== "mobile-dev-private") throw new Error("release/latest must contain the mobile-dev marketplace.");
       const previousSubject = git(["log", "-1", "--format=%s"]);
       const subject = previousSubject.trim();
       const previousRelease = subject.match(/ (\d+\.\d+\.\d+(?:-[\da-zA-Z.-]+)?)$/);

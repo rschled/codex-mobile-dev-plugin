@@ -1,4 +1,3 @@
-import { SENTRY_ORIGIN } from "../src/shared/telemetry.ts";
 import { setImmediate } from "node:timers/promises";
 import { SimulatorInputService } from "../src/server/simulator-input.ts";
 import test from "node:test";
@@ -15,7 +14,7 @@ import { createTestPlugin, fakeBaguette, fakeSimulatorInput, UDID, OTHER_UDID, S
 import { getTelemetryIdentity } from "../src/server/telemetry-identity.ts";
 import manifest from "../.codex-plugin/plugin.json" with { type: "json" };
 
-test("live UI reads use MCP and allow only Sentry browser connections", async t => {
+test("live UI reads use MCP and allow no external browser connections", async t => {
   let revision = "a".repeat(64);
   const plugin = await createTestPlugin(async () => ({ html: '<html data-view="panel">jonas</html>', liveRevision: revision }));
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -24,7 +23,7 @@ test("live UI reads use MCP and allow only Sentry browser connections", async t 
   await plugin.server.connect(serverTransport);
   await client.connect(clientTransport);
   const first = await client.readResource({ uri: APP_URI });
-  assert.deepEqual(first.contents[0]._meta?.ui, { csp: { connectDomains: [SENTRY_ORIGIN], resourceDomains: [] } });
+  assert.deepEqual(first.contents[0]._meta?.ui, { csp: { connectDomains: [], resourceDomains: [] } });
   const uri = `ui://mobile-dev/live?after=${revision}`;
   const unchanged = await client.readResource({ uri });
   assert.deepEqual(JSON.parse(unchanged.contents[0].text as string), { revision });
@@ -85,51 +84,30 @@ test("local packaged UI uses development without a live watcher", async t => {
   assert.match(content, /mobile-dev-environment" content="development"/);
 });
 
-test("UI surfaces and live reload receive the server's anonymous identity and opt-out", async t => {
+test("UI surfaces and live reload cannot enable telemetry or include an identity", async t => {
   const previous = process.env.MOBILE_DEV_TELEMETRY;
-  delete process.env.MOBILE_DEV_TELEMETRY;
+  process.env.MOBILE_DEV_TELEMETRY = "on";
   const html = '<html data-view="panel"><head><meta name="mobile-dev-environment" content="development"></head></html>';
   const plugin = await createTestPlugin(async () => ({ html, liveRevision: "new" }));
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
-  const client = new Client({ name: "identity-test", version: "1" });
+  const client = new Client({ name: "privacy-test", version: "1" });
   t.after(async () => {
-    if (previous === undefined) delete process.env.MOBILE_DEV_TELEMETRY;
-    else process.env.MOBILE_DEV_TELEMETRY = previous;
-    await client.close();
-    await plugin.close();
+    if (previous === undefined) delete process.env.MOBILE_DEV_TELEMETRY; else process.env.MOBILE_DEV_TELEMETRY = previous;
+    await client.close(); await plugin.close();
   });
-  await plugin.server.connect(serverTransport);
-  await client.connect(clientTransport);
-  const identity = getTelemetryIdentity();
-  assert.ok(identity);
-  const userMarker = `name="mobile-dev-user-id" content="${identity.userId}"`;
-  const sessionMarker = `name="mobile-dev-session-id" content="${identity.sessionId}"`;
+  await plugin.server.connect(serverTransport); await client.connect(clientTransport);
+  assert.equal(getTelemetryIdentity(), undefined);
   for (const uri of [APP_URI, WORKSPACE_URI, RECORDING_URI, COMPARISON_URI]) {
     const resource = await client.readResource({ uri });
-    const content = resource.contents[0].text;
-    assert.ok(typeof content === "string");
-    const userIncluded = content.includes(userMarker);
-    const sessionIncluded = content.includes(sessionMarker);
-    assert.ok(userIncluded);
-    assert.ok(sessionIncluded);
+    const text = resource.contents[0].text as string;
+    assert.match(text, /mobile-dev-telemetry" content="off"/);
+    assert.doesNotMatch(text, /mobile-dev-(user|session)-id/);
+    assert.deepEqual(resource.contents[0]._meta?.ui.csp.connectDomains, []);
   }
   const live = await client.readResource({ uri: "ui://mobile-dev/live?after=old" });
-  const liveText = live.contents[0].text;
-  assert.ok(typeof liveText === "string");
-  const update = JSON.parse(liveText);
-  const liveIncludesUser = update.html.includes(userMarker);
-  const liveIncludesSession = update.html.includes(sessionMarker);
-  assert.ok(liveIncludesUser);
-  assert.ok(liveIncludesSession);
-  process.env.MOBILE_DEV_TELEMETRY = "off";
-  const disabled = await client.readResource({ uri: APP_URI });
-  const disabledText = disabled.contents[0].text;
-  assert.ok(typeof disabledText === "string");
-  assert.match(disabledText, /mobile-dev-telemetry" content="off"/);
-  const disabledIncludesUser = disabledText.includes("mobile-dev-user-id");
-  const disabledIncludesSession = disabledText.includes("mobile-dev-session-id");
-  assert.equal(disabledIncludesUser, false);
-  assert.equal(disabledIncludesSession, false);
+  const update = JSON.parse(live.contents[0].text as string);
+  assert.match(update.html, /mobile-dev-telemetry" content="off"/);
+  assert.doesNotMatch(update.html, /mobile-dev-(user|session)-id/);
 });
 
 test("cached side tabs load the current UI through old resource addresses", async t => {
@@ -184,7 +162,7 @@ test("MCP tools expose native entrypoints and complete the simulator workflow", 
   assert.match(recordingResource.contents[0].text as string, /data-view="recording"/);
   assert.equal(recordingResource.contents[0].mimeType, "text/html;profile=mcp-app");
   assert.deepEqual(recordingResource.contents[0]._meta?.["openai/ui"], { preferredDisplayMode: "inline", availableDisplayModes: ["inline", "fullscreen"] });
-  assert.deepEqual(recordingResource.contents[0]._meta?.ui, { prefersBorder: true, csp: { connectDomains: [SENTRY_ORIGIN], resourceDomains: [] } });
+  assert.deepEqual(recordingResource.contents[0]._meta?.ui, { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } });
   const renderRecording = tools.tools.find(tool => tool.name === "mobile_render_performance_recording");
   assert.deepEqual(renderRecording?._meta?.ui, { resourceUri: RECORDING_URI, visibility: ["app", "model"] });
   const comparisonResource = await client.readResource({ uri: COMPARISON_URI });
@@ -212,7 +190,7 @@ test("MCP tools expose native entrypoints and complete the simulator workflow", 
   OpenAIUiResourceMetadataSchema.parse(resource.contents[0]._meta?.["openai/ui"]);
   assert.equal(resource.contents[0].mimeType, "text/html;profile=mcp-app");
   assert.match(resource.contents[0].text as string, /data-view="panel" data-layout="stacked"/);
-  assert.deepEqual(resource.contents[0]._meta?.ui, { csp: { connectDomains: [SENTRY_ORIGIN], resourceDomains: [] } });
+  assert.deepEqual(resource.contents[0]._meta?.ui, { csp: { connectDomains: [], resourceDomains: [] } });
   const status = await client.callTool({ name: "mobile_open_simulator", arguments: {} });
   assert.equal(status.structuredContent?.connected, true);
   assert.equal((status.structuredContent?.devices as unknown[]).length, 2);

@@ -1,3 +1,7 @@
+# Disabled in the privacy fork
+
+See [the privacy policy](privacy-fork.md). The upstream documentation below is historical; it does not describe this fork's active collection. Reporting and uploads are disabled.
+
 # Sentry observability
 
 [Back to README](../README.md) · [Contributing](../CONTRIBUTING.md)

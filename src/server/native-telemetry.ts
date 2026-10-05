@@ -1,8 +1,7 @@
-import { makeNodeTransport } from "@sentry/node";
+import type { makeNodeTransport } from "@sentry/node";
 import type { ErrorEvent } from "@sentry/node";
 import { SENTRY_NATIVE_DSN, SENTRY_RELEASE } from "../shared/telemetry.ts";
 import { TELEMETRY_ENVIRONMENT } from "./telemetry-environment.ts";
-import { getTelemetryIdentity } from "./telemetry-identity.ts";
 
 type Transport = ReturnType<typeof makeNodeTransport>;
 type Envelope = Parameters<Transport["send"]>[0];
@@ -10,7 +9,6 @@ type MetricPayload = Extract<Envelope[1][number], [{ type: "trace_metric" }, unk
 type ClientReport = Extract<Envelope[1][number], [{ type: "client_report" }, unknown]>[1];
 const prefix = "[mobile-dev:sentry-envelope]";
 const maximumLine = 350_000;
-let transport: Transport | undefined;
 
 export function parseNativeEnvelope(encoded: string): Envelope[] {
   if (encoded.length === 0 || encoded.length > maximumLine || /^[A-Za-z0-9+/]*={0,2}$/.test(encoded) === false) {
@@ -68,20 +66,8 @@ export function parseNativeEnvelope(encoded: string): Envelope[] {
   return envelopes;
 }
 
-function sendEnvelope(encoded: string) {
-  if (process.env.MOBILE_DEV_TELEMETRY === "off") return;
-  const envelopes = parseNativeEnvelope(encoded);
-  if (transport === undefined) {
-    const dsn = new URL(SENTRY_NATIVE_DSN);
-    const project = dsn.pathname.slice(1);
-    const url = `https://${dsn.hostname}/api/${project}/envelope/?sentry_key=${dsn.username}&sentry_version=7`;
-    transport = makeNodeTransport({ url, bufferSize: 16, recordDroppedEvent() {} });
-  }
-  for (const envelope of envelopes) {
-    const sending = transport.send(envelope);
-    const promise = Promise.resolve(sending);
-    void promise.catch(() => {});
-  }
+function sendEnvelope(_encoded: string) {
+  // Reports from upstream prebuilt helpers are intentionally discarded.
 }
 
 export class NativeTelemetryRelay {
@@ -131,20 +117,10 @@ function shellQuote(value: string) {
 export function nativeCollectorCommand(binary: string, args: string[] = []) {
   const release = shellQuote(SENTRY_RELEASE);
   const environment = shellQuote(TELEMETRY_ENVIRONMENT);
-  const enabled = process.env.MOBILE_DEV_TELEMETRY === "off" ? "off" : "on";
   const command = shellQuote(binary);
   const quotedArguments = args.map(shellQuote);
   const argumentsText = quotedArguments.join(" ");
-  const identity = getTelemetryIdentity();
-  let identityEnvironment = "";
-  if (identity) {
-    const userId = shellQuote(identity.userId);
-    const sessionId = shellQuote(identity.sessionId);
-    identityEnvironment = ` MOBILE_DEV_NATIVE_USER_ID=${userId} MOBILE_DEV_NATIVE_SESSION_ID=${sessionId}`;
-  }
-  return `MOBILE_DEV_NATIVE_RELEASE=${release} MOBILE_DEV_NATIVE_ENVIRONMENT=${environment} MOBILE_DEV_TELEMETRY=${enabled}${identityEnvironment} exec ${command} ${argumentsText}`;
+  return `MOBILE_DEV_NATIVE_RELEASE=${release} MOBILE_DEV_NATIVE_ENVIRONMENT=${environment} MOBILE_DEV_TELEMETRY=off exec ${command} ${argumentsText}`;
 }
 
-export async function closeNativeTelemetry() {
-  if (transport !== undefined) await transport.flush(2000);
-}
+export async function closeNativeTelemetry() {}

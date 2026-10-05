@@ -7,7 +7,6 @@ import type { TelemetryIdentity } from "../shared/telemetry-identity.ts";
 
 const home = homedir();
 export const TELEMETRY_IDENTITY_DIRECTORY = join(home, "Library/Application Support/mobile-dev/telemetry");
-let identity: TelemetryIdentity | undefined;
 
 function generatedId(prefix: string): string {
   const bytes = randomBytes(16);
@@ -46,7 +45,6 @@ export function loadTelemetryIdentity(directory = TELEMETRY_IDENTITY_DIRECTORY):
 }
 
 export function getTelemetryIdentity(): TelemetryIdentity | undefined {
-  if (process.env.MOBILE_DEV_TELEMETRY === "off") return;
-  if (identity === undefined) identity = loadTelemetryIdentity();
-  return identity;
+  // Do not create or load an installation identifier in this privacy fork.
+  return undefined;
 }

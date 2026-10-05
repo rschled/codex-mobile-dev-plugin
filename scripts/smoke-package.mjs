@@ -15,11 +15,9 @@ let transport;
 let runtimeTransport;
 
 function uiIdentity(text) {
-  const user = text.match(/name="mobile-dev-user-id" content="(anon_[a-f0-9]{32})"/);
-  const session = text.match(/name="mobile-dev-session-id" content="(run_[a-f0-9]{32})"/);
-  assert.ok(user);
-  assert.ok(session);
-  return { userId: user[1], sessionId: session[1] };
+  assert.doesNotMatch(text, /mobile-dev-(user|session)-id/);
+  assert.match(text, /mobile-dev-telemetry" content="off"/);
+  return {};
 }
 
 function withoutSession(text) {
@@ -179,7 +177,7 @@ try {
   assert.ok(resource.contents[0].text.includes('tool-logs'));
   assert.ok(resource.contents[0].text.includes('Memory usage'), 'The packaged Performance view must include the live memory track.');
   assert.equal(workspace._meta.ui.resourceUri, `ui://mobile-dev/${manifest.version}/workspace.html`);
-  assert.deepEqual(resource.contents[0]._meta.ui.csp.connectDomains, ["https://o4512180958068736.ingest.de.sentry.io"]);
+  assert.deepEqual(resource.contents[0]._meta.ui.csp.connectDomains, []);
   assert.deepEqual(resource.contents[0]._meta.ui.csp.resourceDomains, []);
   runtimeTransport = new StdioClientTransport({ command: serverConfig.command, args: serverConfig.args, cwd: serverCwd, stderr: "pipe", env: serverEnv });
   const runtime = new Client({ name: "mobile-dev-package-runtime", version: "1" });
@@ -189,20 +187,10 @@ try {
     assert.deepEqual(runtimeResource.contents[0], resource.contents[0]);
     assert.match(resource.contents[0].text, /mobile-dev-telemetry" content="off"/);
   } else {
-    const initialIdentity = uiIdentity(resource.contents[0].text);
-    const runtimeIdentity = uiIdentity(runtimeResource.contents[0].text);
-    const recordingIdentity = uiIdentity(recordingHtml);
-    const workspaceIdentity = uiIdentity(workspaceResource.contents[0].text);
-    assert.equal(runtimeIdentity.userId, initialIdentity.userId);
-    assert.notEqual(runtimeIdentity.sessionId, initialIdentity.sessionId);
-    assert.deepEqual(recordingIdentity, initialIdentity);
-    assert.deepEqual(workspaceIdentity, initialIdentity);
-    const initialHtml = withoutSession(resource.contents[0].text);
-    const runtimeHtml = withoutSession(runtimeResource.contents[0].text);
-    assert.deepEqual({ ...runtimeResource.contents[0], text: runtimeHtml }, { ...resource.contents[0], text: initialHtml });
+    for (const text of [resource.contents[0].text, runtimeResource.contents[0].text, recordingHtml, workspaceResource.contents[0].text]) uiIdentity(text);
   }
   await runtime.close();
-  console.log("Manifest-launched discovery/runtime processes work without Node on PATH and preserve telemetry identity, environment, and UI addresses.");
+  console.log("Manifest-launched discovery/runtime processes work without Node on PATH and disable telemetry and preserve build environment and UI addresses.");
   assert.ok(workspaceResource.contents[0].text.includes('data-view="workspace" data-layout="split"'));
   const oldWorkspace = await client.readResource({ uri: "ui://mobile-dev/workspace.html" });
   assert.equal(oldWorkspace.contents[0].text, workspaceResource.contents[0].text);
