@@ -140,7 +140,7 @@ for (const name of ["server.mjs", "agent-device-server.mjs"]) {
   execFileSync(process.execPath, ["--check", `dist/${name}`]);
 }
 // Tailwind compiles these styles before esbuild records its input files.
-const packageRoots = new Set(["shadcn", "tailwindcss", "tw-animate-css"].map(name => resolve("node_modules", name)));
+const packageRoots = new Set(["tailwindcss", "tw-animate-css"].map(name => resolve("node_modules", name)));
 for (const path of [...Object.keys(app.metafile.inputs), ...Object.keys(server.metafile.inputs)]) {
   if (!path.includes("node_modules/")) continue;
   let directory = dirname(resolve(path));
@@ -153,7 +153,7 @@ for (const path of [...Object.keys(app.metafile.inputs), ...Object.keys(server.m
     catch { directory = dirname(directory); }
   }
 }
-const licenses = [];
+const licenses = [`shadcn 4.21.0 (vendored Tailwind CSS)\n\n${await readFile("vendor/shadcn/LICENSE.md", "utf8")}`];
 for (const directory of [...packageRoots].sort()) {
   const metadata = JSON.parse(await readFile(`${directory}/package.json`, "utf8"));
   const files = (await readdir(directory)).filter(file => /^(LICENSE|LICENCE|COPYING|NOTICE)(\.|$)/i.test(file));

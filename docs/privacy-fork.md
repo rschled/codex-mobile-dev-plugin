@@ -14,3 +14,5 @@ Device screenshots, accessibility trees, logs, and recordings can still be sent 
 Native binaries are reused from the upstream 0.1.132 release and retain dormant SDK code. The plugin forces their supported opt-out and removes reporting identity; this policy does not cover independently launching those binaries with a custom environment. Some server instrumentation utilities remain for upstream compatibility, but the server initializes no SDK, the UI contains no reporting SDK, and the native relay has no transport.
 
 The bundled Android multipart parser is patched to `@fastify/busboy` 3.2.1, and Agent Device HTTP dependencies are overridden to Undici 7.30.0.
+
+Since fork version 0.1.133, the unused shadcn CLI is removed to eliminate its unpatched Braces dependency chain. Only its unmodified, MIT-licensed CSS is vendored; the compiled stylesheet remains identical. Dependency audits cover development and runtime trees.
