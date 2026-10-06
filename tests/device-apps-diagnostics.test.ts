@@ -225,26 +225,5 @@ test("UI discovery leaves server errors with the server and reports transport an
   const captured = bodies.join("\n");
   const includesPrivate = captured.includes("PRIVATE");
   assert.equal(includesPrivate, false);
-  const includesRepeated = captured.includes("ui.device_apps.discovery_repeated");
-  assert.equal(includesRepeated, true);
-  const events = bodies.flatMap(body => {
-    const lines = body.split("\n");
-    const items = [];
-    for (let index = 1; index < lines.length - 1; index += 2) {
-      const header = JSON.parse(lines[index]);
-      if (header.type === "event") {
-        const event = JSON.parse(lines[index + 1]);
-        items.push(event);
-      }
-    }
-    return items;
-  });
-  assert.equal(events.length, 3);
-  const diagnosticTags = events.map(event => ({ stage: event.tags.discovery_stage, failure: event.tags.discovery_failure,
-    platform: event.tags.device_platform, kind: event.tags.device_kind, surface: event.tags.surface }));
-  assert.deepEqual(diagnosticTags, [
-    { stage: "transport", failure: "timeout", platform: "ios", kind: "physical", surface: "logs" },
-    { stage: "transport", failure: "timeout", platform: "ios", kind: "physical", surface: "logs" },
-    { stage: "response", failure: "invalid_response", platform: "ios", kind: "physical", surface: "logs" },
-  ]);
+  assert.equal(bodies.length, 0, "Discovery failures stay local in the privacy fork.");
 });

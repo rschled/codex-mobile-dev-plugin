@@ -404,24 +404,6 @@ test("storage measurements count owned files without following external symlinks
   assert.equal(absentBytes, 0);
 });
 
-test("Node runtime metrics report CPU, memory and event-loop measurements with component labels", async t => {
-  const envelopes: Envelope[] = [];
-  const runtimeMetrics = Sentry.nodeRuntimeMetricsIntegration({ collectionIntervalMs: 1000, collect: { memExternal: true } });
-  Sentry.init({
-    dsn: "https://public@example.com/1", defaultIntegrations: false,
-    integrations: [runtimeMetrics],
-    transport: () => ({ async send(envelope) { envelopes.push(envelope); return { statusCode: 200 }; }, async flush() { return true; } }),
-  });
-  t.after(async () => { await Sentry.close(); });
-  Sentry.setAttribute("component", "server");
-  await new Promise(resolve => { setTimeout(resolve, 1100); });
-  await Sentry.flush();
-  const encoded = JSON.stringify(envelopes);
-  for (const name of ["node.runtime.cpu.utilization", "node.runtime.mem.rss", "node.runtime.mem.heap_used", "node.runtime.mem.external", "node.runtime.mem.array_buffers", "node.runtime.event_loop.delay.p99", "node.runtime.event_loop.utilization"]) {
-    contains(encoded, name);
-  }
-  contains(encoded, '"component":{"value":"server"');
-});
 
 test("definition failure tags survive Sentry scrubbing with surface, release and anonymous attribution", async t => {
   const { parseDefinitionDiagnostic, setDefinitionDiagnostic } = await import("../src/shared/simulator-definition-diagnostics.ts");

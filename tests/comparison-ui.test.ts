@@ -69,13 +69,7 @@ test("comparison overlays, toggles, shared selections and Ask retain original ru
   t.after(async () => {
     await mounted.close();
     window.close();
-    const encoded = telemetry.join("\n");
-    for (const fragment of ["ui.comparison.process.mean", "ui.comparison.derive.mean", "ui.comparison.summary.mean", "ui.comparison.commit.mean", "ui.comparison.runs", "ui.comparison.run_toggled", "ui.comparison.message_ack.mean", "ui.surface.ready.mean", '"surface":{"value":"comparison"', '"view":{"value":"comparison"']) {
-      assert.ok(encoded.includes(fragment), `Missing telemetry: ${fragment}`);
-    }
-    for (const fragment of [first.id, second.id, "PRIVATE_", "com.example.shop", "jankRatePercent", "p95FrameIntervalMs", "averageCpuPercent"]) {
-      assert.equal(encoded.includes(fragment), false, `Private data reached telemetry: ${fragment}`);
-    }
+    assert.deepEqual(telemetry, [], "Comparison interactions must not report externally.");
   });
   async function settle() { await new Promise(resolve => window.setTimeout(resolve, 60)); }
   await settle();

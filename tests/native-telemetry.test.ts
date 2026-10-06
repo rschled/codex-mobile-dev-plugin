@@ -66,12 +66,9 @@ test("Android launch commands propagate release, environment, anonymous identity
   const command = nativeCollectorCommand("/data/local/tmp/mobile-dev-cpu", ["123"]);
   assert.ok(command.includes(SENTRY_RELEASE));
   assert.match(command, /MOBILE_DEV_NATIVE_ENVIRONMENT='(?:development|release)'/);
-  const identity = getTelemetryIdentity();
-  assert.ok(identity);
-  const userIncluded = command.includes(`MOBILE_DEV_NATIVE_USER_ID='${identity.userId}'`);
-  const sessionIncluded = command.includes(`MOBILE_DEV_NATIVE_SESSION_ID='${identity.sessionId}'`);
-  assert.ok(userIncluded);
-  assert.ok(sessionIncluded);
+  assert.equal(getTelemetryIdentity(), undefined);
+  assert.match(command, /MOBILE_DEV_TELEMETRY=off/);
+  assert.doesNotMatch(command, /MOBILE_DEV_NATIVE_(USER|SESSION)_ID/);
   assert.match(command, /exec '\/data\/local\/tmp\/mobile-dev-cpu' '123'$/);
   const previous = process.env.MOBILE_DEV_TELEMETRY;
   try {

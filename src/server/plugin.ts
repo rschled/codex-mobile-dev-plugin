@@ -7,7 +7,6 @@ import { PluginUpdates, registerPluginUpdateTools } from "./plugin-updates.ts";
 import { LIVE_UI_URI } from "../shared/live-ui.ts";
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PLUGIN_VERSION } from "../shared/version.ts";
-import { SENTRY_ORIGIN } from "../shared/telemetry.ts";
 import { captureServerError, instrumentMcpServer } from "./telemetry.ts";
 import { resolveTelemetryEnvironment } from "./telemetry-environment.ts";
 import { getTelemetryIdentity } from "./telemetry-identity.ts";
@@ -195,7 +194,7 @@ export async function createPlugin(html: string | (() => Promise<UIResource>), b
         ? content.replace('data-view="panel"', 'data-view="workspace"').replace('data-layout="stacked"', 'data-layout="split"')
         : content,
       _meta: {
-        ui: { csp: { connectDomains: [SENTRY_ORIGIN], resourceDomains: [] } },
+        ui: { csp: { connectDomains: [], resourceDomains: [] } },
         "openai/ui": { preferredDisplayMode: "fullscreen", availableDisplayModes: ["inline", "fullscreen"] },
       },
     }],
@@ -222,7 +221,7 @@ export async function createPlugin(html: string | (() => Promise<UIResource>), b
     const configured = configureUI(resource.html);
     const content = configured.replace('data-view="panel"', `data-view="${view}"`);
     return { contents: [{ uri: uri.href, mimeType: RESOURCE_MIME_TYPE, text: content, _meta: {
-      ui: { prefersBorder: true, csp: { connectDomains: [SENTRY_ORIGIN], resourceDomains: [] } },
+      ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } },
       "openai/ui": { preferredDisplayMode: "inline", availableDisplayModes: ["inline", "fullscreen"] },
     } }] };
   });

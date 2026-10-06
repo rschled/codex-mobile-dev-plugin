@@ -30,6 +30,8 @@ await rm(plugin, { recursive: true, force: true });
 await mkdir(plugin, { recursive: true });
 for (const path of [".mcp.json", "README.md", "THIRD_PARTY_NOTICES.md"]) await copyFile(path, `${plugin}/${path}`);
 for (const path of [".codex-plugin", "assets", "dist", "skills/mobile-dev", "skills/mobile-dev-setup"]) await cp(path, `${plugin}/${path}`, { recursive: true, verbatimSymlinks: true });
+await mkdir(`${plugin}/docs`, { recursive: true });
+await copyFile("docs/privacy-fork.md", `${plugin}/docs/privacy-fork.md`);
 await mkdir(`${plugin}/scripts`, { recursive: true });
 await copyFile("scripts/launch-mcp.sh", `${plugin}/scripts/launch-mcp.sh`);
 await chmod(`${plugin}/scripts/launch-mcp.sh`, 0o755);

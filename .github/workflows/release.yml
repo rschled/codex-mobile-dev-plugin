@@ -54,14 +54,6 @@ jobs:
           git show-ref --verify "refs/tags/$RELEASE_TAG"
           node scripts/release-metadata.mjs
 
-      - name: Check Sentry configuration
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-        run: |
-          test -n "$SENTRY_AUTH_TOKEN" || { echo 'Set the SENTRY_AUTH_TOKEN repository secret.'; exit 1; }
-          test -n "$SENTRY_ORG" || { echo 'Set the SENTRY_ORG repository secret.'; exit 1; }
-
       - name: Prepare native build tools
         run: |
           test "$(uname -m)" = arm64
@@ -108,12 +100,6 @@ jobs:
           mkdir "$RUNNER_TEMP/mobile-dev-release"
           unzip -q "$RELEASE_ARCHIVE" -d "$RUNNER_TEMP/mobile-dev-release"
           npm run test:package -- "$RUNNER_TEMP/mobile-dev-release"
-
-      - name: Upload Sentry source maps and native symbols
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
-        run: npm run sentry:upload
 
       - name: Save release ZIP
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

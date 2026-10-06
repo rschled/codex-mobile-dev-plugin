@@ -34,7 +34,7 @@ test("local builds and packages require an explicit release flag", async t => {
   }
 });
 
-test("packaged Node and native telemetry share the explicit build environment", async t => {
+test("build environments cannot enable Node or native telemetry", async t => {
   await mkdir(".local-dev", { recursive: true });
   const directory = await mkdtemp(".local-dev/telemetry-runtime-test-");
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -45,9 +45,9 @@ test("packaged Node and native telemetry share the explicit build environment", 
     import * as Sentry from "@sentry/node";
     import { nativeCollectorCommand } from "./src/server/native-telemetry.ts";
     const client = Sentry.getClient();
-    const options = client.getOptions();
+    const options = client?.getOptions();
     const command = nativeCollectorCommand("/tmp/collector");
-    console.log(JSON.stringify({ environment: options.environment, native: process.env.MOBILE_DEV_NATIVE_ENVIRONMENT, command, enabled: options.enabled }));
+    console.log(JSON.stringify({ client: Boolean(client), native: process.env.MOBILE_DEV_NATIVE_ENVIRONMENT, command, enabled: options?.enabled }));
     await Sentry.close(0);
   `;
   await build({
@@ -65,9 +65,10 @@ test("packaged Node and native telemetry share the explicit build environment", 
       const result = await execute(process.execPath, [probe], { env });
       const reported = JSON.parse(result.stdout);
       const expected = override ?? environment;
-      assert.equal(reported.environment, expected);
-      assert.equal(reported.native, expected);
-      assert.equal(reported.enabled, false);
+      assert.equal(reported.client, false);
+      assert.equal(reported.native, undefined);
+      assert.equal(reported.enabled, undefined);
+      assert.match(reported.command, /MOBILE_DEV_TELEMETRY=off/);
       const expectedCommand = `MOBILE_DEV_NATIVE_ENVIRONMENT='${expected}'`;
       const matches = reported.command.includes(expectedCommand);
       assert.equal(matches, true);
