@@ -34857,7 +34857,7 @@ var Server = class extends Protocol {
 };
 
 // src/shared/version.ts
-var PLUGIN_VERSION = "0.1.132";
+var PLUGIN_VERSION = "0.1.133";
 
 // src/server/telemetry.ts
 import { AsyncLocalStorage } from "node:async_hooks";

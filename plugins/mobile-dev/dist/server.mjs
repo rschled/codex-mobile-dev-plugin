@@ -37515,7 +37515,7 @@ function wrapMcpServerWithSentry(mcpServerInstance, options) {
 import { AsyncLocalStorage } from "node:async_hooks";
 
 // src/shared/version.ts
-var PLUGIN_VERSION = "0.1.132";
+var PLUGIN_VERSION = "0.1.133";
 
 // src/shared/telemetry.ts
 var SENTRY_RELEASE = `mobile-dev@${PLUGIN_VERSION}`;
