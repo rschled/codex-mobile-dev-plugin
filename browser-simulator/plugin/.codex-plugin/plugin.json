@@ -1,0 +1,13 @@
+{
+  "name": "ios-simulator-browser",
+  "version": "0.1.0",
+  "description": "Open and control the iOS simulator assigned to a Dapital checkout beside the Codex chat.",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "iOS Simulator Browser",
+    "shortDescription": "Live Dapital iOS simulator in the Codex browser",
+    "category": "Developer Tools",
+    "defaultPrompt": ["Open the mapped iOS simulator beside this chat."]
+  }
+}

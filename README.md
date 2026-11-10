@@ -32,6 +32,8 @@ builds still download from GitHub/npm. Device access, local Metro connections,
 and anything you explicitly attach to Codex chat remain available. This is not
 a network sandbox for your app, the AI host, or a manually launched native binary.
 
+For Dapital iOS development, the [iOS Simulator Browser](browser-simulator/README.md) is available as a separate local build for the Codex browser.
+
 ## Features
 
 ### Live devices beside your chat

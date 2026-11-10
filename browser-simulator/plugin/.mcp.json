@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ios-simulator-browser": {
+      "command": "/bin/sh",
+      "args": ["./launch.sh"],
+      "cwd": ".",
+      "env_vars": ["HOME", "DEVELOPER_DIR"]
+    }
+  }
+}

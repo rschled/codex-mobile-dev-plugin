@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iOS Simulator</title>
+<link rel="stylesheet" href="viewer.css">
+<main>
+  <header>
+    <div><h1 id="device">iOS Simulator</h1><p id="status" role="status">Connecting…</p></div>
+    <button id="home" type="button" disabled>Home</button>
+    <a href="screenshot.jpg" download="simulator.jpg">Screenshot</a>
+  </header>
+  <div id="viewport">
+    <img id="screen" alt="Live simulator screen. Click to focus, then use your keyboard." tabindex="0" draggable="false" hidden>
+  </div>
+  <form id="text">
+    <input id="typed" aria-label="Text to send to simulator" placeholder="Type into the focused iOS field" maxlength="1024" required>
+    <button id="send" disabled>Type text</button>
+  </form>
+</main>
+<script type="module" src="viewer.js"></script>
+</html>
